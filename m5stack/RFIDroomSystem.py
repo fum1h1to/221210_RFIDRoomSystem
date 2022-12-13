@@ -4,11 +4,17 @@ from uiflow import *
 import time
 import unit
 import _thread
+import wifiCfg
+import urequests
+import ujson
 
 ####################
 # variables
 ####################
 DEBUG = True
+SCREEN_WIDTH = 320
+SERVER_IP = '192.168.11.6'
+SERVER_PORT = 5000
 
 screen = M5Screen()
 screen.clean_screen()
@@ -164,8 +170,8 @@ class HomeScreen:
 
     self.enter_btn = M5Btn(text='Enter', x=20, y=70, w=130, h=80, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_30, parent=None)
     self.leave_btn = M5Btn(text='Leave', x=170, y=70, w=130, h=80, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_30, parent=None)
-    self.add_btn = M5Btn(text='add', x=70, y=170, w=80, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
-    self.remove_btn = M5Btn(text='remove', x=170, y=170, w=80, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.add_btn = M5Btn(text='add', x=20, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.remove_btn = M5Btn(text='remove', x=170, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
 
     self.enter_btn.pressed(self.enter_pressed)
     self.leave_btn.pressed(self.leave_pressed)
@@ -183,6 +189,66 @@ class HomeScreen:
 
 ########## TagAddScreen ##########
 class TagAddScreen:
+  isScanning = True
+  detectTagId = ''
+
+  def add_btn_pressed(self):
+    self.cancel_btn.set_hidden(True)
+    self.add_btn.set_hidden(True)
+    self._set_centerText_and_centering("adding tag....")
+
+    try:
+      data = {
+        "tagid": self.detectTagId
+      }
+
+      header = {
+        'Content-Type' : 'application/json'
+      }
+
+      req = urequests.post(url= 'http://' + SERVER_IP + '/api/addTag', data = ujson.dumps(data).encode("utf-8"), headers=header)
+      if (req.status_code) == 200:
+        res_json = req.json()
+        print(res_json)
+        if res_json['status'] == '0':
+          self._set_centerText_and_centering("failed")
+          self.ok_btn.set_hidden(False)
+
+        elif res_json['status'] == '1':
+          self._set_centerText_and_centering("success!!")
+          self.ok_btn.set_hidden(False)
+        
+        elif res_json['status'] == '2':
+          self._set_centerText_and_centering("already exists")
+          self.ok_btn.set_hidden(False)
+        
+        else:
+          self._set_centerText_and_centering("failed")
+        self.ok_btn.set_hidden(False)
+
+      else:
+        self._set_centerText_and_centering("failed")
+        self.ok_btn.set_hidden(False)
+      
+      req.close()
+    except:
+      self._set_centerText_and_centering("failed")
+      self.ok_btn.set_hidden(False)
+
+  def cancel_btn_pressed(self):
+    self.cancel_btn.set_hidden(True)
+    self.add_btn.set_hidden(True)
+    self._set_centerText_and_centering("Please hold up your tag.")
+    self.changeDetectMode()
+
+  def ok_btn_pressed(self):
+    self.ok_btn.set_hidden(True)
+    self._set_centerText_and_centering("Please hold up your tag.")
+    self.changeDetectMode()
+  
+  def changeDetectMode(self):
+    self.isScanning = True
+    self.detectTagId = ''
 
   def __init__(self):
     local_screen = screen.get_new_screen()
@@ -190,17 +256,106 @@ class TagAddScreen:
 
     self.TitleText = M5Label('Tag Add', x=20, y=20, color=0x000000, font=FONT_MONT_30, parent=None)
 
+    self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
+    self.cancel_btn = M5Btn(text='cancel', x=20, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.cancel_btn.set_hidden(True)
+    self.cancel_btn.pressed(self.cancel_btn_pressed)
+    self.add_btn = M5Btn(text='add', x=170, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.add_btn.set_hidden(True)
+    self.add_btn.pressed(self.add_btn_pressed)
+
+    self.ok_btn = M5Btn(text='OK', x=95, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.ok_btn.set_hidden(True)
+    self.ok_btn.pressed(self.ok_btn_pressed)
+
     # save screen with all current content
     self.screen = local_screen
 
   def get_screen(self):
     return self.screen
-    
+
+  def _set_centerText_and_centering(self, str):
+    self.centerText.set_text(str)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
   def loop(self):
-    pass
+    if rfid_0.isCardOn() and self.isScanning:
+      self._set_centerText_and_centering("scanning....")
+      self.detectTagId = str(rfid_0.readUid())
+    else:
+      pass
+  
+    if len(self.detectTagId) != 0 and self.isScanning:
+      self._set_centerText_and_centering(self.detectTagId + " detedted")
+      self.cancel_btn.set_hidden(False)
+      self.add_btn.set_hidden(False)
+      self.isScanning = False
 
 ########## TagRemoveScreen ##########
 class TagRemoveScreen:
+
+  isScanning = True
+  detectTagId = ''
+
+  def remove_btn_pressed(self):
+    self.cancel_btn.set_hidden(True)
+    self.remove_btn.set_hidden(True)
+    self._set_centerText_and_centering("removing tag....")
+
+    try:
+      data = {
+        "tagid": self.detectTagId
+      }
+
+      header = {
+        'Content-Type' : 'application/json'
+      }
+
+      req = urequests.post(url= 'http://' + SERVER_IP + '/api/removeTag', data = ujson.dumps(data).encode("utf-8"), headers=header)
+      if (req.status_code) == 200:
+        res_json = req.json()
+        print(res_json)
+        if res_json['status'] == '0':
+          self._set_centerText_and_centering("failed")
+          self.ok_btn.set_hidden(False)
+
+        elif res_json['status'] == '1':
+          self._set_centerText_and_centering("success!!")
+          self.ok_btn.set_hidden(False)
+        
+        elif res_json['status'] == '2':
+          self._set_centerText_and_centering("does not exist")
+          self.ok_btn.set_hidden(False)
+        
+        else:
+          self._set_centerText_and_centering("failed")
+        self.ok_btn.set_hidden(False)
+
+      else:
+        self._set_centerText_and_centering("failed")
+        self.ok_btn.set_hidden(False)
+      
+      req.close()
+    except:
+      self._set_centerText_and_centering("failed")
+      self.ok_btn.set_hidden(False)
+
+  def cancel_btn_pressed(self):
+    self.cancel_btn.set_hidden(True)
+    self.remove_btn.set_hidden(True)
+    self._set_centerText_and_centering("Please hold up your tag.")
+    self.changeDetectMode()
+
+  def ok_btn_pressed(self):
+    self.ok_btn.set_hidden(True)
+    self._set_centerText_and_centering("Please hold up your tag.")
+    self.changeDetectMode()
+  
+  def changeDetectMode(self):
+    self.isScanning = True
+    self.detectTagId = ''
 
   def __init__(self):
     local_screen = screen.get_new_screen()
@@ -208,18 +363,45 @@ class TagRemoveScreen:
 
     self.TitleText = M5Label('Tag Remove', x=20, y=20, color=0x000000, font=FONT_MONT_30, parent=None)
 
+    self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
+    self.cancel_btn = M5Btn(text='cancel', x=20, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.cancel_btn.set_hidden(True)
+    self.cancel_btn.pressed(self.cancel_btn_pressed)
+    self.remove_btn = M5Btn(text='remove', x=170, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.remove_btn.set_hidden(True)
+    self.remove_btn.pressed(self.remove_btn_pressed)
+
+    self.ok_btn = M5Btn(text='OK', x=95, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.ok_btn.set_hidden(True)
+    self.ok_btn.pressed(self.ok_btn_pressed)
+
     # save screen with all current content
     self.screen = local_screen
 
   def get_screen(self):
     return self.screen
 
+  def _set_centerText_and_centering(self, str):
+    self.centerText.set_text(str)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
   def loop(self):
-    pass
+    if rfid_0.isCardOn() and self.isScanning:
+      self._set_centerText_and_centering("scanning....")
+      self.detectTagId = str(rfid_0.readUid())
+    else:
+      pass
+  
+    if len(self.detectTagId) != 0 and self.isScanning:
+      self._set_centerText_and_centering(self.detectTagId + " detedted")
+      self.cancel_btn.set_hidden(False)
+      self.remove_btn.set_hidden(False)
+      self.isScanning = False
 
 ########## EnterRoomScreen ##########
 class EnterRoomScreen:
-
   def __init__(self):
     local_screen = screen.get_new_screen()
     screen.load_screen(local_screen)
@@ -231,7 +413,7 @@ class EnterRoomScreen:
 
   def get_screen(self):
     return self.screen
-
+    
   def loop(self):
     pass
 
@@ -265,12 +447,19 @@ screens.append(LeaveRoomScreen())
 screens.append(DebugScreen())
 
 if DEBUG:
-  current_screen = DEBUG_SCREEN
+  current_screen = HOME_SCREEN
 else:
   current_screen = HOME_SCREEN
 screen.load_screen(screens[current_screen].get_screen())
 screen.set_screen_bg_color(0xe1e1e1)
 
+# wifiCfg.doConnect('ssid', 'password')
+# if not (wifiCfg.wlan_sta.isconnected()):
+#   print("try reconnect")
+#   wifiCfg.reconnect()
+# print("get ifconfig")
+print(wifiCfg.wlan_sta.ifconfig())
+wait(5)
 
 ####################
 # event
