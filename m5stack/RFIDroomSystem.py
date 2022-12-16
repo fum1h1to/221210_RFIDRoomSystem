@@ -13,7 +13,7 @@ import ujson
 ####################
 DEBUG = True
 SCREEN_WIDTH = 320
-SERVER_IP = '192.168.11.6'
+SERVER_IP = '192.168.68.104'
 SERVER_PORT = 5000
 
 screen = M5Screen()
@@ -229,11 +229,13 @@ class TagAddScreen:
       else:
         self._set_centerText_and_centering("failed")
         self.ok_btn.set_hidden(False)
-      
-      req.close()
+  
     except:
       self._set_centerText_and_centering("failed")
       self.ok_btn.set_hidden(False)
+
+    finally:
+      req.close()
 
   def cancel_btn_pressed(self):
     self.cancel_btn.set_hidden(True)
@@ -337,10 +339,12 @@ class TagRemoveScreen:
         self._set_centerText_and_centering("failed")
         self.ok_btn.set_hidden(False)
       
-      req.close()
     except:
       self._set_centerText_and_centering("failed")
       self.ok_btn.set_hidden(False)
+    
+    finally:
+      req.close()
 
   def cancel_btn_pressed(self):
     self.cancel_btn.set_hidden(True)
@@ -402,23 +406,152 @@ class TagRemoveScreen:
 
 ########## EnterRoomScreen ##########
 class EnterRoomScreen:
+  isScanning = True
+  detectTagId = ''
+
+  def ok_btn_pressed(self):
+    self.ok_btn.set_hidden(True)
+    self._set_centerText_and_centering("Please hold up your tag.")
+    self.changeDetectMode()
+
+  def _enter_room(self, tagid):
+    self._set_centerText_and_centering("entering room....")
+
+    try:
+      data = {
+        "tagid": tagid
+      }
+
+      header = {
+        'Content-Type' : 'application/json'
+      }
+
+      req = urequests.post(url= 'http://' + SERVER_IP + '/api/enter', data = ujson.dumps(data).encode("utf-8"), headers=header)
+      if (req.status_code) == 200:
+        res_json = req.json()
+        print(res_json)
+        if res_json['status'] == '0':
+          self._set_centerText_and_centering("failed")
+          self.ok_btn.set_hidden(False)
+
+        elif res_json['status'] == '1':
+          self._set_centerText_and_centering("success!!")
+          self.ok_btn.set_hidden(False)
+        
+        elif res_json['status'] == '2':
+          self._set_centerText_and_centering("not exists")
+          self.ok_btn.set_hidden(False)
+        
+        else:
+          self._set_centerText_and_centering("failed")
+          self.ok_btn.set_hidden(False)
+
+      else:
+        self._set_centerText_and_centering("failed")
+        self.ok_btn.set_hidden(False)
+
+    except:
+      self._set_centerText_and_centering("failed")
+      self.ok_btn.set_hidden(False)
+
+    finally:
+      req.close()
+  
+  def changeDetectMode(self):
+    self.isScanning = True
+    self.detectTagId = ''
+
   def __init__(self):
     local_screen = screen.get_new_screen()
     screen.load_screen(local_screen)
 
     self.TitleText = M5Label('Enter Room', x=20, y=20, color=0x000000, font=FONT_MONT_30, parent=None)
 
+    self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
+    self.ok_btn = M5Btn(text='OK', x=95, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.ok_btn.set_hidden(True)
+    self.ok_btn.pressed(self.ok_btn_pressed)
+
     # save screen with all current content
     self.screen = local_screen
 
+  def _set_centerText_and_centering(self, str):
+    self.centerText.set_text(str)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
   def get_screen(self):
     return self.screen
-    
+
   def loop(self):
-    pass
+    if rfid_0.isCardOn() and self.isScanning:
+      self._set_centerText_and_centering("scanning....")
+      self.detectTagId = str(rfid_0.readUid())
+    else:
+      pass
+  
+    if len(self.detectTagId) != 0 and self.isScanning:
+      self._set_centerText_and_centering(self.detectTagId + " detedted")
+      self.isScanning = False
+      self._enter_room(self.detectTagId)
 
 ########## LeaveRoomScreen ##########
 class LeaveRoomScreen:
+  isScanning = True
+  detectTagId = ''
+
+  def ok_btn_pressed(self):
+    self.ok_btn.set_hidden(True)
+    self._set_centerText_and_centering("Please hold up your tag.")
+    self.changeDetectMode()
+
+  def _leave_room(self, tagid):
+    self._set_centerText_and_centering("leaving room....")
+
+    try:
+      data = {
+        "tagid": tagid
+      }
+
+      header = {
+        'Content-Type' : 'application/json'
+      }
+
+      req = urequests.post(url= 'http://' + SERVER_IP + '/api/leave', data = ujson.dumps(data).encode("utf-8"), headers=header)
+      if (req.status_code) == 200:
+        res_json = req.json()
+        print(res_json)
+        if res_json['status'] == '0':
+          self._set_centerText_and_centering("failed")
+          self.ok_btn.set_hidden(False)
+
+        elif res_json['status'] == '1':
+          self._set_centerText_and_centering("success!!")
+          self.ok_btn.set_hidden(False)
+        
+        elif res_json['status'] == '2':
+          self._set_centerText_and_centering("not exists")
+          self.ok_btn.set_hidden(False)
+        
+        else:
+          self._set_centerText_and_centering("failed")
+          self.ok_btn.set_hidden(False)
+
+      else:
+        self._set_centerText_and_centering("failed")
+        self.ok_btn.set_hidden(False)
+
+    except:
+      self._set_centerText_and_centering("failed")
+      self.ok_btn.set_hidden(False)
+
+    finally:
+      req.close()
+  
+  def changeDetectMode(self):
+    self.isScanning = True
+    self.detectTagId = ''
 
   def __init__(self):
     local_screen = screen.get_new_screen()
@@ -426,14 +559,34 @@ class LeaveRoomScreen:
 
     self.TitleText = M5Label('Leave Room', x=20, y=20, color=0x000000, font=FONT_MONT_30, parent=None)
 
+    self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+
+    self.ok_btn = M5Btn(text='OK', x=95, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
+    self.ok_btn.set_hidden(True)
+    self.ok_btn.pressed(self.ok_btn_pressed)
+
     # save screen with all current content
     self.screen = local_screen
+
+  def _set_centerText_and_centering(self, str):
+    self.centerText.set_text(str)
+    self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
 
   def get_screen(self):
     return self.screen
 
   def loop(self):
-    pass
+    if rfid_0.isCardOn() and self.isScanning:
+      self._set_centerText_and_centering("scanning....")
+      self.detectTagId = str(rfid_0.readUid())
+    else:
+      pass
+  
+    if len(self.detectTagId) != 0 and self.isScanning:
+      self._set_centerText_and_centering(self.detectTagId + " detedted")
+      self.isScanning = False
+      self._leave_room(self.detectTagId)
 
 
 ####################

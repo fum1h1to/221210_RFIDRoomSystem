@@ -21,8 +21,8 @@
 3. データベースの準備<br>
     ```
     $ python
-    >>> from app import app
-    >>> from app import db
+    >>> from server import app
+    >>> from server import db
     >>> with app.app_context():
     ...    db.create_all()
     >>> exit()
