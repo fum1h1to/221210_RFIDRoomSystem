@@ -13,7 +13,7 @@ import ujson
 ####################
 DEBUG = True
 SCREEN_WIDTH = 320
-SERVER_IP = '192.168.68.104'
+SERVER_IP = '192.168.11.6'
 SERVER_PORT = 5000
 
 screen = M5Screen()
@@ -260,6 +260,8 @@ class TagAddScreen:
 
     self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
     self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+    self.backText = M5Label('back', x=55, y=225, color=0x000000, font=FONT_MONT_14, parent=None)
+    self.backText.set_pos(int(55 - (self.backText.get_width() / 2)) ,225)
 
     self.cancel_btn = M5Btn(text='cancel', x=20, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
     self.cancel_btn.set_hidden(True)
@@ -275,7 +277,12 @@ class TagAddScreen:
     # save screen with all current content
     self.screen = local_screen
 
+  def buttonA_wasPressed(self):
+    _thread.start_new_thread(goHomeScreen, ())
+    pass
+
   def get_screen(self):
+    btnA.wasPressed(self.buttonA_wasPressed)
     return self.screen
 
   def _set_centerText_and_centering(self, str):
@@ -369,6 +376,8 @@ class TagRemoveScreen:
 
     self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
     self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+    self.backText = M5Label('back', x=55, y=225, color=0x000000, font=FONT_MONT_14, parent=None)
+    self.backText.set_pos(int(55 - (self.backText.get_width() / 2)) ,225)
 
     self.cancel_btn = M5Btn(text='cancel', x=20, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
     self.cancel_btn.set_hidden(True)
@@ -384,7 +393,12 @@ class TagRemoveScreen:
     # save screen with all current content
     self.screen = local_screen
 
+  def buttonA_wasPressed(self):
+    _thread.start_new_thread(goHomeScreen, ())
+    pass
+
   def get_screen(self):
+    btnA.wasPressed(self.buttonA_wasPressed)
     return self.screen
 
   def _set_centerText_and_centering(self, str):
@@ -436,10 +450,15 @@ class EnterRoomScreen:
 
         elif res_json['status'] == '1':
           self._set_centerText_and_centering("success!!")
+          speaker.playTone(440, 1)
           self.ok_btn.set_hidden(False)
         
         elif res_json['status'] == '2':
           self._set_centerText_and_centering("not exists")
+          self.ok_btn.set_hidden(False)
+        
+        elif res_json['status'] == '3':
+          self._set_centerText_and_centering("already entered")
           self.ok_btn.set_hidden(False)
         
         else:
@@ -469,6 +488,8 @@ class EnterRoomScreen:
 
     self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
     self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+    self.backText = M5Label('back', x=55, y=225, color=0x000000, font=FONT_MONT_14, parent=None)
+    self.backText.set_pos(int(55 - (self.backText.get_width() / 2)) ,225)
 
     self.ok_btn = M5Btn(text='OK', x=95, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
     self.ok_btn.set_hidden(True)
@@ -481,7 +502,12 @@ class EnterRoomScreen:
     self.centerText.set_text(str)
     self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
 
+  def buttonA_wasPressed(self):
+    _thread.start_new_thread(goHomeScreen, ())
+    pass
+
   def get_screen(self):
+    btnA.wasPressed(self.buttonA_wasPressed)
     return self.screen
 
   def loop(self):
@@ -534,6 +560,10 @@ class LeaveRoomScreen:
           self._set_centerText_and_centering("not exists")
           self.ok_btn.set_hidden(False)
         
+        elif res_json['status'] == '3':
+          self._set_centerText_and_centering("not in room")
+          self.ok_btn.set_hidden(False)
+        
         else:
           self._set_centerText_and_centering("failed")
           self.ok_btn.set_hidden(False)
@@ -561,6 +591,8 @@ class LeaveRoomScreen:
 
     self.centerText = M5Label('Please hold up your tag.', x=51, y=111, color=0x000, font=FONT_MONT_18, parent=None)
     self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
+    self.backText = M5Label('back', x=55, y=225, color=0x000000, font=FONT_MONT_14, parent=None)
+    self.backText.set_pos(int(55 - (self.backText.get_width() / 2)) ,225)
 
     self.ok_btn = M5Btn(text='OK', x=95, y=170, w=130, h=40, bg_c=0xFFFFFF, text_c=0x000000, font=FONT_MONT_18, parent=None)
     self.ok_btn.set_hidden(True)
@@ -573,7 +605,12 @@ class LeaveRoomScreen:
     self.centerText.set_text(str)
     self.centerText.set_pos(int((SCREEN_WIDTH / 2) - (self.centerText.get_width() / 2)) ,111)
 
+  def buttonA_wasPressed(self):
+    _thread.start_new_thread(goHomeScreen, ())
+    pass
+
   def get_screen(self):
+    btnA.wasPressed(self.buttonA_wasPressed)
     return self.screen
 
   def loop(self):
@@ -617,17 +654,11 @@ wait(5)
 ####################
 # event
 ####################
-def buttonA_wasPressed():
-  _thread.start_new_thread(goPrevScreen, ())
-  pass
-if DEBUG:
-  btnA.wasPressed(buttonA_wasPressed)
-
 def buttonB_wasPressed():
-  _thread.start_new_thread(goNextScreen, ())
+  _thread.start_new_thread(goDebugScreen, ())
   pass
 if DEBUG:
-  btnC.wasPressed(buttonB_wasPressed)
+  btnB.wasPressed(buttonB_wasPressed)
 
 ####################
 # loop
