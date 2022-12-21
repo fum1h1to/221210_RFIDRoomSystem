@@ -554,6 +554,7 @@ class LeaveRoomScreen:
 
         elif res_json['status'] == '1':
           self._set_centerText_and_centering("success!!")
+          speaker.playTone(440, 1)
           self.ok_btn.set_hidden(False)
         
         elif res_json['status'] == '2':

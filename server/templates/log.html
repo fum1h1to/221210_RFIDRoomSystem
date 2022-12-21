@@ -2,9 +2,15 @@
 
 {% block content %}
 <h1>Users Log</h1>
+<div class="mt-5">
+    <button type="button" class="btn btn-primary" id="reload">リロード</button>
+</div>
 
 <div class="ratio ratio-16x9">
-    <iframe id="imgArea" src="/data/graph1.png" frameborder="0"></iframe>
+    <iframe src="/data/graph" frameborder="0"></iframe>
+</div>
+<div class="ratio ratio-16x9">
+    <iframe src="/data/graph" frameborder="0"></iframe>
 </div>
 
 <table class="table">
@@ -31,8 +37,8 @@
 
 {% block scriptArea %}
 <script>
-    setInterval(() => {
-        document.getElementById('imgArea').contentWindow.location.reload();
-    }, 5000);
+    document.getElementById('reload').addEventListener('click', () => {
+        window.location.reload();
+    });
 </script>
 {% endblock%}

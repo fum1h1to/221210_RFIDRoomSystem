@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify, render_template, make_response
 from flask_sqlalchemy import SQLAlchemy
-import json
+from sqlalchemy import desc
+from pytz import timezone
+from dateutil import parser
+import datetime
 
-from io import BytesIO
-import urllib
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"]="sqlite:///db.sqlite3"
@@ -161,27 +162,38 @@ def log():
     logs = Log.query.all()
     return render_template('log.html', logs=logs)
 
-@app.route('/data/graph1.png')
+
+@app.route('/data/graph')
 def graph1():
-    # データからグラフをプロットする
-    x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    y = [10, 20, 30, 40, 50, 60, 70, 80, 90, 120]
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    plt.title('サンプル')
-    plt.grid(which='both')
-    plt.legend()
-    plt.plot(x, y)
-    # canvasにプロットした画像を出力
-    canvas = FigureCanvasAgg(fig)
-    png_output = BytesIO()
-    canvas.print_png(png_output)
-    data = png_output.getvalue()
-    # HTML側に渡すレスポンスを生成する
-    response = make_response(data)
-    response.headers['Content-Type'] = 'image/png'
-    response.headers['Content-Length'] = len(data)
-    return response
+    
+    logs = Log.query.all()
+    userdict = {}
+    dataframe = []
+    for log in logs:
+
+        if log.entering:
+            userdict[log.tagid] = log.timestamp + datetime.timedelta(hours=9)
+        else:
+            finish = log.timestamp + datetime.timedelta(hours=9)
+            dataframe.append(dict(
+                User=log.tagid,
+                Date=userdict[log.tagid].strftime('%m-%d'),
+                Start=userdict[log.tagid],
+                Finish=finish
+            ))
+
+
+    df = pd.DataFrame(dataframe)
+    fig = px.timeline(
+        df,  # 使用するデータフレーム
+        x_start='Start', x_end='Finish',  # 横軸の開始・終了の列名
+        y='User',  # 縦軸の列名
+    )
+    # グラフ全体とホバーのフォントサイズ変更
+    fig.update_layout(font_size=20, hoverlabel_font_size=20)
+    fig.write_html('templates/graph.html')
+
+    return render_template('graph.html')
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
 flask
 Flask-SQLAlchemy
 matplotlib
+pandas
+plotly
