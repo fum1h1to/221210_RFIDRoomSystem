@@ -1,8 +1,5 @@
-from flask import Flask, request, jsonify, render_template, make_response
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import desc
-from pytz import timezone
-from dateutil import parser
 import datetime
 
 import pandas as pd
@@ -185,11 +182,11 @@ def graph1():
 
     df = pd.DataFrame(dataframe)
     fig = px.timeline(
-        df,  # 使用するデータフレーム
-        x_start='Start', x_end='Finish',  # 横軸の開始・終了の列名
-        y='User',  # 縦軸の列名
+        df,
+        x_start='Start', x_end='Finish',
+        y='User',
     )
-    # グラフ全体とホバーのフォントサイズ変更
+    
     fig.update_layout(font_size=20, hoverlabel_font_size=20)
     fig.write_html('templates/graph.html')
 
