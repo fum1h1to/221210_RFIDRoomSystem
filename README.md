@@ -1,6 +1,6 @@
 # RFIDRoomSystem
 
-# how to
+# How To
 ## server側の起動
 1. サーバのディレクトリへ移動<br>
     ```
@@ -19,6 +19,7 @@
     ```
 
 3. データベースの準備<br>
+    ※データベースがinstance配下にすでにある場合は対応不可
     ```
     $ python
     >>> from server import app
@@ -32,3 +33,13 @@
     ```
     python server.py
     ```
+
+# Note
+ファイル構成
+```
+RFIDRoomSystem<br>
+├─m5stack： M5Stack関連のソースコードを格納
+└─server： Webサーバ関連のソースコードを格納
+    └─instance
+        └─db.sqlite3： 取得したログやタグの情報を保持
+```
